@@ -4,8 +4,9 @@
 
 module Main where
 
-import Control.Lens ((%~), (&), (.~), (^.), makeLenses, over)
+import Control.Lens (ix, (?~), (%~), (&), (.~), (^.), (^?), _Just, makeLenses, over)
 import Control.Monad.Except (ExceptT (..), runExceptT)
+import Data.Time (UTCTime)
 import qualified Data.Map as M
 import Graphics.Gloss
   ( Color,
@@ -21,25 +22,43 @@ import Graphics.Gloss
     translate,
     white,
   )
+import Graphics.Gloss.Interface.IO.Game
+  ( Event (EventKey),
+    Key (MouseButton),
+    MouseButton (LeftButton),
+    playIO,
+  )
 import Graphics.Gloss.Juicy (loadJuicyPNG)
+
+data PieceType = King | Queen | Bishop | Rook | Knight | Pawn
+  deriving (Show, Eq)
+
+data PieceColor = Black | White
+  deriving (Show, Eq)
+
+data Piece
+  = Piece
+      { _pieceType :: PieceType,
+        _pieceColor :: PieceColor,
+        _sprite :: Picture
+      }
+  deriving (Eq, Show)
 
 data Assets
   = Assets
-      { _blackKing :: Picture,
-        _blackQueen :: Picture,
-        _blackBishop :: Picture,
-        _blackRook :: Picture,
-        _blackKnight :: Picture,
-        _blackPawn :: Picture,
-        _whiteKing :: Picture,
-        _whiteQueen :: Picture,
-        _whiteBishop :: Picture,
-        _whiteRook :: Picture,
-        _whiteKnight :: Picture,
-        _whitePawn :: Picture
+      { _blackKing :: Piece,
+        _blackQueen :: Piece,
+        _blackBishop :: Piece,
+        _blackRook :: Piece,
+        _blackKnight :: Piece,
+        _blackPawn :: Piece,
+        _whiteKing :: Piece,
+        _whiteQueen :: Piece,
+        _whiteBishop :: Piece,
+        _whiteRook :: Piece,
+        _whiteKnight :: Piece,
+        _whitePawn :: Piece
       }
-
-makeLenses ''Assets
 
 data Column = A | B | C | D | E | F | G | H
   deriving (Enum, Show, Eq, Ord)
@@ -52,23 +71,26 @@ data Square
       { _background :: Picture,
         _yOffset :: Float,
         _xOffset :: Float,
-        _piece :: Maybe Picture
+        _piece :: Maybe Piece
       }
   deriving (Eq, Show)
 
-makeLenses ''Square
-
-newtype GameState
+data GameState
   = GameState
-      {_board :: M.Map (Row, Column) Square}
+      { _board :: M.Map (Row, Column) Square,
+        _selectedPiece :: Maybe Piece
+      }
 
+makeLenses ''Piece
+makeLenses ''Assets
+makeLenses ''Square
 makeLenses ''GameState
 
 -- | loadImage takes a file path and returns Graphics.Gloss.Picture. If the
 -- picture cannot be loaded an error message with the failed file will be
 -- returned.
 loadImage :: FilePath -> ExceptT String IO Picture
-loadImage filePath = do
+loadImage filePath =
   ExceptT $
     maybe
       (Left $ "failed to load file: " <> filePath)
@@ -79,18 +101,18 @@ loadImage filePath = do
 setup :: ExceptT String IO Assets
 setup =
   Assets
-    <$> loadImage "src/sprites/blackKing.png"
-    <*> loadImage "src/sprites/blackQueen.png"
-    <*> loadImage "src/sprites/blackBishop.png"
-    <*> loadImage "src/sprites/blackRook.png"
-    <*> loadImage "src/sprites/blackKnight.png"
-    <*> loadImage "src/sprites/blackPawn.png"
-    <*> loadImage "src/sprites/whiteKing.png"
-    <*> loadImage "src/sprites/whiteQueen.png"
-    <*> loadImage "src/sprites/whiteBishop.png"
-    <*> loadImage "src/sprites/whiteRook.png"
-    <*> loadImage "src/sprites/whiteKnight.png"
-    <*> loadImage "src/sprites/whitePawn.png"
+    <$> fmap (Piece King Black) (loadImage "src/sprites/blackKing.png")
+    <*> fmap (Piece Queen Black) (loadImage "src/sprites/blackQueen.png")
+    <*> fmap (Piece Bishop Black) (loadImage "src/sprites/blackBishop.png")
+    <*> fmap (Piece Rook Black) (loadImage "src/sprites/blackRook.png")
+    <*> fmap (Piece Knight Black) (loadImage "src/sprites/blackKnight.png")
+    <*> fmap (Piece Pawn Black) (loadImage "src/sprites/blackPawn.png")
+    <*> fmap (Piece King White) (loadImage "src/sprites/whiteKing.png")
+    <*> fmap (Piece Queen White) (loadImage "src/sprites/whiteQueen.png")
+    <*> fmap (Piece Bishop White) (loadImage "src/sprites/whiteBishop.png")
+    <*> fmap (Piece Rook White) (loadImage "src/sprites/whiteRook.png")
+    <*> fmap (Piece Knight White) (loadImage "src/sprites/whiteKnight.png")
+    <*> fmap (Piece Pawn White) (loadImage "src/sprites/whitePawn.png")
 
 -- | The color on the end of each row is repeated when the row is unrolled. So I
 -- enumerated 2 full rows until a cycle occurs
@@ -156,16 +178,63 @@ pieceLayout assets =
     emptyBoard
 
 render :: GameState -> Picture
-render (GameState board) =
+render (GameState board _) =
   pictures
     . map
       ( \(Square b y x p) ->
           maybe
             (translate x y b)
             (\p' -> pictures [translate x y b, translate x y p'])
-            p
+            (p ^? _Just . sprite)
       )
     $ M.elems board
+
+handleClick :: Event -> GameState -> IO GameState
+handleClick (EventKey (MouseButton LeftButton) _ _ (x, y)) g@(GameState board (Just piece')) = do
+  print (x,y)
+  print (lookupRow x, lookupCol y)
+  print "-------------"
+  pure g
+  -- case M.lookup (lookupRow x, lookupCol y) board of
+  --   Just sqr ->
+  --     case sqr ^. piece of
+  --       Just p -> GameState (board & ix (lookupRow x, lookupCol y) . piece ?~ p) Nothing
+  --       Nothing -> g
+  --   Nothing -> g
+handleClick (EventKey (MouseButton LeftButton) _ _ (x, y)) g@(GameState board Nothing) = do
+  print (x,y)
+  print (lookupRow x, lookupCol y)
+  print "-------------"
+  pure g
+--  case M.lookup (lookupRow x, lookupCol y) board of
+--    Just sqr ->
+--      case sqr ^. piece of
+--        Just p -> GameState board (Just p)
+--        Nothing -> g
+--    Nothing -> g
+handleClick _ state = pure state
+
+lookupCol :: Float -> Column
+lookupCol x
+  | x >= (-180) || x < (-135) = A
+  | x >= (-135) || x < (-90) = B
+  | x >= (-90) || x < (-45) = C
+  | x >= (-45) || x < 0 = D
+  | x >= 0 || x < 45 = E
+  | x >= 45 || x < 90 = F
+  | x >= 90 || x < 135 = G
+  | otherwise = H
+
+lookupRow :: Float -> Row
+lookupRow y
+  | y >= (-180) || y < (-135) = Eight
+  | y >= (-135) || y < (-90) = Seven
+  | y >= (-90) || y < (-45) = Six
+  | y >= (-45) || y < 0 = Five
+  | y >= 0 || y < 45 = Four
+  | y >= 45 || y < 90 = Three
+  | y >= 90 || y < 135 = Two
+  | otherwise = One
 
 main :: IO ()
 main = do
@@ -173,10 +242,12 @@ main = do
   case eAssets of
     Left err -> print err
     Right assets -> do
-      let initialState = GameState . M.fromList . zip indices $ pieceLayout assets
-      display
+      let initialState = flip GameState Nothing . M.fromList . zip indices $ pieceLayout assets
+      playIO
         (InWindow "Chess" (360, 360) (360, 360))
         red
-        (render initialState)
-
-
+        5
+        initialState
+        (pure . render)
+        handleClick
+        (\_ w -> pure w)
