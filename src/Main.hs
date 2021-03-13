@@ -4,31 +4,18 @@
 
 module Main where
 
-import Control.Lens (ix, (?~), (%~), (&), (.~), (^.), (^?), _Just, makeLenses, over)
-import Control.Monad.Except (ExceptT (..), runExceptT)
+import Control.Lens ((%~), (&), (.~), (?~), (^.), (^?), _Just, ix, makeLenses, over)
+import Control.Monad.Except (ExceptT(..), runExceptT)
 import Data.Time (UTCTime)
-import qualified Data.Map as M
 import Graphics.Gloss
-  ( Color,
-    Display (InWindow),
-    Picture,
-    black,
-    color,
-    display,
-    light,
-    pictures,
-    rectangleSolid,
-    red,
-    translate,
-    white,
+  ( Display(InWindow), Color, Picture, black, color, display, light, pictures, rectangleSolid, red
+  , translate, white
   )
 import Graphics.Gloss.Interface.IO.Game
-  ( Event (EventKey),
-    Key (MouseButton),
-    MouseButton (LeftButton),
-    playIO,
+  ( Event(EventKey), Key(MouseButton), KeyState(Up), MouseButton(LeftButton), playIO
   )
 import Graphics.Gloss.Juicy (loadJuicyPNG)
+import qualified Data.Map as M
 
 data PieceType = King | Queen | Bishop | Rook | Knight | Pawn
   deriving (Show, Eq)
@@ -60,7 +47,7 @@ data Assets
         _whitePawn :: Piece
       }
 
-data Column = A | B | C | D | E | F | G | H
+data Column = A | B | C | D | E | F | G | H -- Reverse this enum
   deriving (Enum, Show, Eq, Ord)
 
 data Row = Eight | Seven | Six | Five | Four | Three | Two | One
@@ -80,6 +67,7 @@ data GameState
       { _board :: M.Map (Row, Column) Square,
         _selectedPiece :: Maybe Piece
       }
+      deriving (Show)
 
 makeLenses ''Piece
 makeLenses ''Assets
@@ -140,7 +128,7 @@ checkers =
 
 -- | indices generates all the square names used for chess algebraic notation
 indices :: [(Row, Column)]
-indices = [(row, clm) | clm <- [A .. H], row <- [Eight .. One]]
+indices = [(row, clm) | clm <- [H,G .. A], row <- [Eight .. One]]
 
 emptyBoard :: [Square]
 emptyBoard =
@@ -190,50 +178,53 @@ render (GameState board _) =
     $ M.elems board
 
 handleClick :: Event -> GameState -> IO GameState
-handleClick (EventKey (MouseButton LeftButton) _ _ (x, y)) g@(GameState board (Just piece')) = do
+handleClick (EventKey (MouseButton LeftButton) Up _ (x, y)) g@(GameState board (Just piece')) = do
   print (x,y)
   print (lookupRow x, lookupCol y)
   print "-------------"
-  pure g
-  -- case M.lookup (lookupRow x, lookupCol y) board of
-  --   Just sqr ->
-  --     case sqr ^. piece of
-  --       Just p -> GameState (board & ix (lookupRow x, lookupCol y) . piece ?~ p) Nothing
-  --       Nothing -> g
-  --   Nothing -> g
-handleClick (EventKey (MouseButton LeftButton) _ _ (x, y)) g@(GameState board Nothing) = do
+  case M.lookup (lookupRow x, lookupCol y) board of
+    Just sqr ->
+      case sqr ^. piece of
+        Just p -> do
+          print 1
+          pure g
+        Nothing ->
+          pure $ GameState (board & ix (lookupRow x, lookupCol y) . piece ?~ piece') Nothing
+    Nothing -> pure g
+handleClick (EventKey (MouseButton LeftButton) Up _ (x, y)) g@(GameState board Nothing) = do
   print (x,y)
   print (lookupRow x, lookupCol y)
   print "-------------"
-  pure g
---  case M.lookup (lookupRow x, lookupCol y) board of
---    Just sqr ->
---      case sqr ^. piece of
---        Just p -> GameState board (Just p)
---        Nothing -> g
---    Nothing -> g
+  case M.lookup (lookupRow x, lookupCol y) board of
+    Just sqr ->
+      case sqr ^. piece of
+        Just p -> do
+          print 0
+          pure $ GameState board (Just p)
+        Nothing -> pure g
+    Nothing -> pure g
 handleClick _ state = pure state
 
 lookupCol :: Float -> Column
 lookupCol x
-  | x >= (-180) || x < (-135) = A
-  | x >= (-135) || x < (-90) = B
-  | x >= (-90) || x < (-45) = C
-  | x >= (-45) || x < 0 = D
-  | x >= 0 || x < 45 = E
-  | x >= 45 || x < 90 = F
-  | x >= 90 || x < 135 = G
-  | otherwise = H
+  | x >= (-180) && x < (-135) = H
+  | x >= (-135) && x < (-90) = G
+  | x >= (-90) && x < (-45) = F
+  | x >= (-45) && x < 0 = E
+  | x >= 0 && x < 45 = D
+  | x >= 45 && x < 90 = C
+  | x >= 90 && x < 135 = B
+  | otherwise = A
 
 lookupRow :: Float -> Row
 lookupRow y
-  | y >= (-180) || y < (-135) = Eight
-  | y >= (-135) || y < (-90) = Seven
-  | y >= (-90) || y < (-45) = Six
-  | y >= (-45) || y < 0 = Five
-  | y >= 0 || y < 45 = Four
-  | y >= 45 || y < 90 = Three
-  | y >= 90 || y < 135 = Two
+  | y >= (-180) && y < (-135) = Eight
+  | y >= (-135) && y < (-90) = Seven
+  | y >= (-90) && y < (-45) = Six
+  | y >= (-45) && y < 0 = Five
+  | y >= 0 && y < 45 = Four
+  | y >= 45 && y < 90 = Three
+  | y >= 90 && y < 135 = Two
   | otherwise = One
 
 main :: IO ()
