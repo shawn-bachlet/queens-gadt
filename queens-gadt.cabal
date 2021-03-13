@@ -25,3 +25,5 @@ executable chess
                      , gloss-juicy
                      , JuicyPixels
                      , time
+  other-modules: GameState,
+                 Types

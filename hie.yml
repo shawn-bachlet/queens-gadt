@@ -1,4 +1,4 @@
 cradle:
   stack:
     - path: "./src/Main.hs"
-      component: "chess:exe:chess"
+      component: "queens-gadt:exe:chess"
