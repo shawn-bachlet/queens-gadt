@@ -1,9 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Main where
 
+import Prelude hiding (lookup)
 import Control.Lens ((%~), (&), (.~), (?~), (^.), (^?), _Just, ix, makeLenses, over)
-import GameState ( loadInitialState )
+import GameState ( loadInitialState, indices )
 import Graphics.Gloss
   ( Display(InWindow), Color, Picture, black, color, display, light, pictures, rectangleSolid, red
   , translate, white
@@ -13,52 +15,50 @@ import Graphics.Gloss.Interface.IO.Game
   )
 import Graphics.Gloss.Juicy (loadJuicyPNG)
 import Control.Monad.Except (ExceptT(ExceptT), runExceptT)
-import Data.Map as M (lookup, elems)
 import Types
     ( GameState(GameState),
       Square(Square),
       Row(..),
       Column(..),
-      sprite, piece )
+      sprite, piece, yOffset, xOffset, selectedPiece, lookup, update )
+import Movement
 
 render :: GameState -> Picture
 render (GameState board _) =
   pictures
     . map
-      ( \(Square b y x p) ->
+      (( \(Square b y x p) ->
           maybe
             (translate x y b)
             (\p' -> pictures [translate x y b, translate x y p'])
             (p ^? _Just . sprite)
-      )
-    $ M.elems board
+      ) . flip lookup board)
+    $ indices
 
 handleClick :: Event -> GameState -> IO GameState
-handleClick (EventKey (MouseButton LeftButton) Up _ (x, y)) g@(GameState board (Just piece')) = do
-  print (x,y)
-  print (lookupRow x, lookupCol y)
-  print "-------------"
-  case M.lookup (lookupRow x, lookupCol y) board of
-    Just sqr ->
-      case sqr ^. piece of
+handleClick (EventKey (MouseButton LeftButton) Up _ (x, y)) g@(GameState board (Just selection)) = do
+  print  (lookupRow x, lookupCol y)
+  lookup (lookupRow x, lookupCol y) board &
+      \sqr -> case sqr ^. piece of
         Just p -> do
-          print 1
-          pure g
+          print p
+          pure $ g & selectedPiece .~ Nothing
         Nothing ->
-          pure $ GameState (board & ix (lookupRow x, lookupCol y) . piece ?~ piece') Nothing
-    Nothing -> pure g
+          pure $ GameState
+            ( update (lookupRow (selection ^. xOffset), lookupCol (selection ^. yOffset)) piece Nothing
+            . update (lookupRow x, lookupCol y) piece (selection ^. piece)
+            $ board
+            )
+
+            Nothing
 handleClick (EventKey (MouseButton LeftButton) Up _ (x, y)) g@(GameState board Nothing) = do
-  print (x,y)
-  print (lookupRow x, lookupCol y)
-  print "-------------"
-  case M.lookup (lookupRow x, lookupCol y) board of
-    Just sqr ->
-      case sqr ^. piece of
+  print  (lookupRow x, lookupCol y)
+  lookup (lookupRow x, lookupCol y) board &
+      \sqr -> case sqr ^. piece of
         Just p -> do
-          print 0
-          pure $ GameState board (Just p)
+          print p
+          pure $ GameState board (Just sqr)
         Nothing -> pure g
-    Nothing -> pure g
 handleClick _ state = pure state
 
 lookupCol :: Float -> Column
@@ -94,6 +94,6 @@ main = do
         red
         5
         initialState'
-        (pure . render)
+        (pure.render)
         handleClick
-        (\_ w -> pure w)
+        (const pure)

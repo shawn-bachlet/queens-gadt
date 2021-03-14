@@ -1,4 +1,19 @@
 cradle:
   stack:
     - path: "./src/Main.hs"
-      component: "queens-gadt:exe:chess"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "./src/GameState.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "./src/Types.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "./src/Movement.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "./src"
+      component: "queens-gadt:lib"
+
+    - path: "./test"
+      component: "queens-gadt:test:queens-gadt-test"

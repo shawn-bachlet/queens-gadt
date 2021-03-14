@@ -39,7 +39,7 @@ import Types
       whitePawn,
       whiteQueen,
       whiteRook,
-      piece )
+      piece, insert, empty )
 
 -- | loadImage takes a file path and returns Graphics.Gloss.Picture. If the
 -- picture cannot be loaded an error message with the failed file will be
@@ -134,4 +134,4 @@ pieceLayout assets =
 
 loadInitialState :: ExceptT String IO GameState
 loadInitialState =
-  flip GameState Nothing . M.fromList . zip indices . pieceLayout <$> setup
+  flip GameState Nothing . foldr (\(space, square) m -> insert space square m) empty . zip indices . pieceLayout <$> setup
