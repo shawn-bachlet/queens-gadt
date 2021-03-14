@@ -19,27 +19,30 @@ import Graphics.Gloss
   )
 import Graphics.Gloss.Juicy (loadJuicyPNG)
 import Types
-    ( GameState(GameState),
-      Square(Square),
-      Row(One, Eight),
-      Column(H,G, A),
-      Assets(Assets),
-      Piece(Piece),
-      PieceColor(White, Black),
-      PieceType(Pawn, King, Queen, Bishop, Rook, Knight),
-      blackBishop,
-      blackKing,
-      blackKnight,
-      blackPawn,
-      blackQueen,
-      blackRook,
-      whiteBishop,
-      whiteKing,
-      whiteKnight,
-      whitePawn,
-      whiteQueen,
-      whiteRook,
-      piece, insert, empty )
+  ( Assets (Assets),
+    Column (A, G, H),
+    GameState (GameState),
+    Piece (Piece),
+    PieceColor (Black, White),
+    PieceType (Bishop, King, Knight, Pawn, Queen, Rook),
+    Row (Eight, One),
+    Square (Square),
+    blackBishop,
+    blackKing,
+    blackKnight,
+    blackPawn,
+    blackQueen,
+    blackRook,
+    insert,
+    piece,
+    terminalBoard,
+    whiteBishop,
+    whiteKing,
+    whiteKnight,
+    whitePawn,
+    whiteQueen,
+    whiteRook,
+  )
 
 -- | loadImage takes a file path and returns Graphics.Gloss.Picture. If the
 -- picture cannot be loaded an error message with the failed file will be
@@ -95,7 +98,7 @@ checkers =
 
 -- | indices generates all the square names used for chess algebraic notation
 indices :: [(Row, Column)]
-indices = [(row, clm) | clm <- [H,G .. A], row <- [Eight .. One]]
+indices = [(row, clm) | clm <- [H, G .. A], row <- [Eight .. One]]
 
 emptyBoard :: [Square]
 emptyBoard =
@@ -134,4 +137,4 @@ pieceLayout assets =
 
 loadInitialState :: ExceptT String IO GameState
 loadInitialState =
-  flip GameState Nothing . foldr (\(space, square) m -> insert space square m) empty . zip indices . pieceLayout <$> setup
+  flip GameState Nothing . foldr (\(space, square) m -> insert space square m) terminalBoard . zip indices . pieceLayout <$> setup

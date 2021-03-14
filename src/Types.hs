@@ -70,31 +70,33 @@ makeLenses ''Square
 
 type Space = (Row, Column)
 
-newtype TotalMap = TotalMap (Space -> Square)
+newtype TotalMap k v = TotalMap (k -> v)
 
-lookup :: Space -> TotalMap -> Square
+lookup :: k -> TotalMap k v -> v
 lookup s (TotalMap f) = f s
 
-insert :: Space -> Square -> TotalMap -> TotalMap
-insert space square (TotalMap f) = TotalMap $
-  \space' ->
-    if space == space'
-      then square
-      else f space'
+insert :: Eq k => k -> v -> TotalMap k v -> TotalMap k v
+insert k v (TotalMap f) = TotalMap $
+  \k' ->
+    if k == k'
+      then v
+      else f k'
 
-update :: Space -> Lens' Square a -> a -> TotalMap -> TotalMap
-update s l a (TotalMap f) = TotalMap $
-  \s' ->
-    if s == s'
-      then f s' & l .~ a
-      else f s'
+update :: Eq k => k -> Lens' v a -> a -> TotalMap k v -> TotalMap k v
+update k l a (TotalMap f) = TotalMap $
+  \k' ->
+    if k == k'
+      then f k' & l .~ a
+      else f k'
 
-empty :: TotalMap
-empty = TotalMap $ \s -> Square Blank 0 0 Nothing
+terminal :: v -> TotalMap k v
+terminal v = TotalMap $ const v
+
+terminalBoard = terminal $ Square Blank 0 0 Nothing
 
 data GameState
   = GameState
-      { _board :: TotalMap,
+      { _board :: TotalMap Space Square,
         _selectedPiece :: Maybe Square
       }
 makeLenses ''GameState
