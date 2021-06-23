@@ -26,9 +26,11 @@ executable queens-gadt
                      , JuicyPixels
   other-modules: GameState,
                  Types,
-                 Movement
+                 Movement,
+                 Rendering
 
-library
+
+library queens-gadt-lib
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
@@ -42,6 +44,7 @@ library
   exposed-modules:     GameState
                      , Types
                      , Movement
+                     , Rendering
 
 test-suite queens-gadt-test
   type:                exitcode-stdio-1.0

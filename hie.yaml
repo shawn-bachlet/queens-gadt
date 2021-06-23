@@ -1,0 +1,19 @@
+cradle:
+  cabal:
+    - path: "src/Main.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "src/GameState.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "src/Types.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "src/Movement.hs"
+      component: "queens-gadt:exe:queens-gadt"
+
+    - path: "src"
+      component: "lib:queens-gadt"
+
+    - path: "test"
+      component: "queens-gadt:test:queens-gadt-test"

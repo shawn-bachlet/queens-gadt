@@ -1,48 +1,19 @@
 module GameState where
 
 import Control.Lens ((%~), (&), (.~), (?~), (^.), (^?), _Just, ix, makeLenses, over)
-import Control.Monad.Except (ExceptT (ExceptT), runExceptT)
-import qualified Data.Map as M
+import Control.Monad.Except (ExceptT(ExceptT), runExceptT)
 import Graphics.Gloss
-  ( Color,
-    Display (InWindow),
-    Picture,
-    black,
-    color,
-    display,
-    light,
-    pictures,
-    rectangleSolid,
-    red,
-    translate,
-    white,
+  ( Display(InWindow), Color, Picture, black, color, display, light, pictures, rectangleSolid, red
+  , translate, white
   )
 import Graphics.Gloss.Juicy (loadJuicyPNG)
 import Types
-  ( Assets (Assets),
-    Column (A, G, H),
-    GameState (GameState),
-    Piece (Piece),
-    PieceColor (Black, White),
-    PieceType (Bishop, King, Knight, Pawn, Queen, Rook),
-    Row (Eight, One),
-    Square (Square),
-    blackBishop,
-    blackKing,
-    blackKnight,
-    blackPawn,
-    blackQueen,
-    blackRook,
-    insert,
-    piece,
-    terminalBoard,
-    whiteBishop,
-    whiteKing,
-    whiteKnight,
-    whitePawn,
-    whiteQueen,
-    whiteRook,
+  ( Assets(Assets), Board(..), Column(A, G, H), GameState(GameState), Piece(Piece)
+  , PieceColor(Black, White), PieceType(Bishop, King, Knight, Pawn, Queen, Rook), Row(Eight, One)
+  , Square(Square), blackBishop, blackKing, blackKnight, blackPawn, blackQueen, blackRook, piece
+  , whiteBishop, whiteKing, whiteKnight, whitePawn, whiteQueen, whiteRook
   )
+import qualified Data.Map as M
 
 -- | loadImage takes a file path and returns Graphics.Gloss.Picture. If the
 -- picture cannot be loaded an error message with the failed file will be
@@ -100,41 +71,81 @@ checkers =
 indices :: [(Row, Column)]
 indices = [(row, clm) | clm <- [H, G .. A], row <- [Eight .. One]]
 
-emptyBoard :: [Square]
-emptyBoard =
-  zipWith
-    (\(x, y) clr -> Square (color clr $ rectangleSolid 45 45) x y Nothing)
-    [(x, y) | x <- take 8 (iterate (+ 45) (-157.5)), y <- take 8 (iterate (+ 45) (-157.5))]
-    checkers
-
-pieceLayout :: Assets -> [Square]
+-- emptyBoard :: [Square]
+-- emptyBoard =
+--   zipWith
+--     (\(x, y) clr -> Square (color clr $ rectangleSolid 45 45) x y Nothing)
+--     [(x, y) | x <- take 8 (iterate (+ 45) (-157.5)), y <- take 8 (iterate (+ 45) (-157.5))]
+--     checkers
+--
+pieceLayout :: Assets -> Board
 pieceLayout assets =
-  zipWith
-    (\p sqr -> sqr & piece .~ p)
-    ( [ Just $ assets ^. whiteRook,
-        Just $ assets ^. whiteKnight,
-        Just $ assets ^. whiteBishop,
-        Just $ assets ^. whiteQueen,
-        Just $ assets ^. whiteKing,
-        Just $ assets ^. whiteBishop,
-        Just $ assets ^. whiteKnight,
-        Just $ assets ^. whiteRook
-      ]
-        <> replicate 8 (Just $ assets ^. whitePawn)
-        <> replicate 32 Nothing
-        <> replicate 8 (Just $ assets ^. blackPawn)
-        <> [ Just $ assets ^. blackRook,
-             Just $ assets ^. blackKnight,
-             Just $ assets ^. blackBishop,
-             Just $ assets ^. blackQueen,
-             Just $ assets ^. blackKing,
-             Just $ assets ^. blackBishop,
-             Just $ assets ^. blackKnight,
-             Just $ assets ^. blackRook
-           ]
-    )
-    emptyBoard
+  Board
+    (Square . Just $ assets ^. whiteRook)
+    (Square . Just $ assets ^. whiteKnight)
+    (Square . Just $ assets ^. whiteBishop)
+    (Square . Just $ assets ^. whiteQueen)
+    (Square . Just $ assets ^. whiteKing)
+    (Square . Just $ assets ^. whiteBishop)
+    (Square . Just $ assets ^. whiteKnight)
+    (Square . Just $ assets ^. whiteRook)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square . Just $ assets ^. whitePawn)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square Nothing)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackPawn)
+    (Square . Just $ assets ^. blackRook)
+    (Square . Just $ assets ^. blackKnight)
+    (Square . Just $ assets ^. blackBishop)
+    (Square . Just $ assets ^. blackQueen)
+    (Square . Just $ assets ^. blackKing)
+    (Square . Just $ assets ^. blackBishop)
+    (Square . Just $ assets ^. blackKnight)
+    (Square . Just $ assets ^. blackRook)
 
 loadInitialState :: ExceptT String IO GameState
 loadInitialState =
-  flip GameState Nothing . foldr (\(space, square) m -> insert space square m) terminalBoard . zip indices . pieceLayout <$> setup
+  GameState [] Nothing . pieceLayout <$>  setup
