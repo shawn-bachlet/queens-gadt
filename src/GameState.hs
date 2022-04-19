@@ -33,9 +33,7 @@ import Types
     blackPawn,
     blackQueen,
     blackRook,
-    insert,
     piece,
-    terminalBoard,
     whiteBishop,
     whiteKing,
     whiteKnight,
@@ -98,7 +96,7 @@ checkers =
 
 -- | indices generates all the square names used for chess algebraic notation
 indices :: [(Row, Column)]
-indices = [(row, clm) | clm <- [H, G .. A], row <- [Eight .. One]]
+indices = [(row, clm) | row <- [Eight .. One], clm <- [H, G .. A]]
 
 emptyBoard :: [Square]
 emptyBoard =
@@ -137,4 +135,4 @@ pieceLayout assets =
 
 loadInitialState :: ExceptT String IO GameState
 loadInitialState =
-  flip GameState Nothing . foldr (\(space, square) m -> insert space square m) terminalBoard . zip indices . pieceLayout <$> setup
+  flip GameState Nothing . foldr (\(space, square) m -> M.insert space square m) M.empty . zip indices . pieceLayout <$> setup
