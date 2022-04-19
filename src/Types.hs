@@ -55,7 +55,7 @@ makeLenses ''Assets
 data Column = A | B | C | D | E | F | G | H
   deriving (Enum, Show, Eq, Ord)
 
-data Row = Eight | Seven | Six | Five | Four | Three | Two | One
+data Row = One | Two | Three | Four | Five | Six | Seven | Eight
   deriving (Enum, Show, Eq, Ord)
 
 data Square

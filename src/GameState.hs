@@ -96,7 +96,7 @@ checkers =
 
 -- | indices generates all the square names used for chess algebraic notation
 indices :: [(Row, Column)]
-indices = [(row, clm) | row <- [Eight .. One], clm <- [H, G .. A]]
+indices = [(row, clm) | row <- [One .. Eight], clm <- [A .. H]]
 
 emptyBoard :: [Square]
 emptyBoard =

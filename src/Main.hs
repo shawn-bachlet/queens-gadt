@@ -61,8 +61,10 @@ handleClick :: Event -> GameState -> IO GameState
 handleClick (EventKey (MouseButton LeftButton) Up _ (y, x)) g@(GameState board (Just selection)) = do
   print  (lookupRow x, lookupCol y)
   pure g
---   case (lookupRow x, lookupCol y) of
---     (Just x', Just y') -> do
+  case (lookupRow x, lookupCol y) of
+    (Just x', Just y') -> do
+         print $ lookup (x', y') board
+         pure $ g & selectedPiece .~ Nothing
 --       print (x', y')
 --       case lookup (x', y') board of
 --         Just sqr ->
@@ -82,10 +84,16 @@ handleClick (EventKey (MouseButton LeftButton) Up _ (y, x)) g@(GameState board (
 --                       Nothing
 --                 _ -> pure $ g & selectedPiece .~ Nothing
 --         Nothing -> pure $ g & selectedPiece .~ Nothing
---     _ -> pure $ g & selectedPiece .~ Nothing
+    _ -> pure $ g & selectedPiece .~ Nothing
 handleClick (EventKey (MouseButton LeftButton) Up _ (y, x)) g@(GameState board Nothing) = do
   print  (lookupRow x, lookupCol y)
   pure g
+  case (lookupRow x, lookupCol y) of
+    (Just x', Just y') -> do
+         print $ lookup (x', y') board
+         pure $ g & selectedPiece .~ Nothing
+    _ -> pure $ g & selectedPiece .~ Nothing
+
 --  lookup (lookupRow x, lookupCol y) board &
 --      \sqr -> case sqr ^. piece of
 --        Just p -> do
